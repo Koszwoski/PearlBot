@@ -109,6 +109,9 @@ public class AutoPearlModule extends Module {
     private volatile boolean restockRequested = false;
     private volatile int restockContainerId = 0;
     private volatile com.zenith.util.RequestFuture restockWithdrawFuture = null;
+    // Last player the bot pulled - told when the restock container runs dry.
+    private volatile String lastPulledName = null;
+    private volatile UUID lastPulledUuid = null;
 
     private int reopenStep = 0;
     private long reopenAtMs = 0L;
@@ -719,6 +722,7 @@ public class AutoPearlModule extends Module {
                         stack -> stack.getId() == ItemRegistry.ENDER_PEARL.id(), slots);
                     if (actions.isEmpty()) {
                         warn("Restock: no ender pearls left in the container at ({}, {}, {})", cfg.x, cfg.y, cfg.z);
+                        notifyRestockEmpty();
                         closeRestockContainer();
                         finishRestock(false, now);
                         return true;
@@ -740,13 +744,28 @@ public class AutoPearlModule extends Module {
                 boolean done = f == null || f.isCompleted();
                 if (done || now - restockStateAtMs > RESTOCK_WITHDRAW_TIMEOUT_MS) {
                     closeRestockContainer();
-                    info("Restock finished: bot now holds {} pearl(s)", countBotPearls());
+                    int nowHolding = countBotPearls();
+                    info("Restock finished: bot now holds {} pearl(s)", nowHolding);
+                    if (nowHolding < cfg.minPearls) {
+                        warn("Restock: container ran out - only {} pearl(s) after restocking", nowHolding);
+                        notifyRestockEmpty();
+                    }
                     finishRestock(true, now);
                 }
                 return true;
             }
         }
         return false;
+    }
+
+    /** Whisper the last pulled player once that the restock container is out of pearls. */
+    private void notifyRestockEmpty() {
+        String name = lastPulledName;
+        UUID uuid = lastPulledUuid;
+        if (name == null || uuid == null || !isOwnerOnline(uuid)) return;
+        sendWhisper(name, PLUGIN_MESSAGES.restockEmpty);
+        lastPulledName = null;
+        lastPulledUuid = null;
     }
 
     private void setRestockState(RestockState state, long now) {
@@ -1047,6 +1066,8 @@ public class AutoPearlModule extends Module {
             .filter(c -> c.x != tx || c.y != ty || c.z != tz)
             .count();
         if (pull.ownerName != null) {
+            lastPulledName = pull.ownerName;
+            lastPulledUuid = pull.ownerUuid;
             String tail = remaining == 1 ? "1 pearl" : remaining + " pearls";
             sendWhisper(pull.ownerName, PLUGIN_MESSAGES.format(PLUGIN_MESSAGES.pulled, "remaining", tail));
         }

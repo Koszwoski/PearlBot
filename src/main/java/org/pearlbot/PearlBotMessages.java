@@ -66,6 +66,8 @@ public class PearlBotMessages {
 
     public String discordNothingToPull = "Nothing to pull.";
 
+    public String restockEmpty = "Heads up: my pearl restock container is out of ender pearls - please refill it.";
+
     public String format(String template, Object... keyValues) {
         String result = template;
         for (int i = 0; i + 1 < keyValues.length; i += 2) {

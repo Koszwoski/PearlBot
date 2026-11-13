@@ -58,7 +58,7 @@ pearlbot restock target 16     # withdraw until it holds about 16
 pearlbot restock on
 ```
 
-When the bot is idle (no pulls queued, nobody controlling it) and below `min`, it walks to the container, opens it, shift-clicks pearl stacks into its inventory, closes it and returns to its idle position. Pulls always come first. If the container is empty or can't be reached, it retries after 5 minutes.
+When the bot is idle (no pulls queued, nobody controlling it) and below `min`, it walks to the container, opens it, shift-clicks pearl stacks into its inventory, closes it and returns to its idle position. Pulls always come first. If the container is empty or can't be reached, it retries after 5 minutes. When the container runs out of pearls, the bot whispers the last player it pulled (once, if they're online) so they can refill it.
 
 `pearlbot restock now` forces a run, `pearlbot restock status` shows the settings and how many pearls the bot has.
 
